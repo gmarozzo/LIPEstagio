@@ -5,7 +5,7 @@
 
 int LIPEstagio(){
 
- TFile *f = new TFile("delphes_test.root","READ");
+ TFile *f = new TFile("delphes_test_PU3.root","READ");
     TTree *tree = (TTree*) f->Get("Delphes");
     Int_t proton_size, vertex_size;
     Bool_t proton_isPU[20];
@@ -28,32 +28,38 @@ int LIPEstagio(){
     //TH2F *th2 = new TH2F("th2","Time diff vs z",100,-10,10,-200,200);
     float dif;
     double c = 299.792458; //[mm/ns]
+    int index;
     for(int i=1; i<tree->GetEntries();i++){
         if(i%10000==0) cout<<"Event n."<<i<<endl;
         tree->GetEntry(i);
         dif=0.;
+        float best_dif=10000.;
         int nforw=0, nback=0;    
         for(int j=0; j<5;j++){
         if(j>proton_size-1) continue;
         //if(!proton_isPU[j])th->Fill(proton_t[j]);
-        if(proton_pz[j]<0 && proton_isPU[j]==0 && nback == 0)  {
-            dif+=proton_t[j]; 
+        if(proton_pz[j]<0 && proton_isPU[j]==0)  { 
             nback++;
-        }
-        if(proton_pz[j]>0 && proton_isPU[j]==0 && nforw == 0) {
-            dif-=proton_t[j];
-            nforw++;
-        }
-        //th->Fill(0.,0.);
-        int index = 0;
-        for(int k = 0; k < vertex_size; k++){
-            if(vertex_z[k] / dif > index){
-                index = k;
+             for(int l=0; l<5;l++){
+                if(l>proton_size-1) continue;
+                if(proton_pz[l]>0 && proton_isPU[l]==0) {
+                    dif=proton_t[j]-proton_t[l];
+                    nforw++;
+                }
+             
+            for(int k = 0; k < vertex_size; k++){
+                if(abs(vertex_z[k] - (c/2) * dif ) < best_dif){
+                    best_dif = vertex_z[k] - (c/2) * dif ;
+                    //cout<<best_dif<<endl;
+                }
+            }
             }
         }
-        if(abs(dif) > 0.0001 && abs(dif) < 5){
-            float vertex_calculado = (c/2) * dif;
-            float desvio = vertex_z[index] - vertex_calculado;
+        
+        //th->Fill(0.,0.);
+        if(vertex_size < 5 && nback > 0 && nforw > 0) {
+            float desvio = best_dif;
+            //cout<<desvio<<endl;
             th->Fill(desvio);
         }
         //cout<<"diff: "<<dif<<" vertex: "<<vertex_z[0]<<endl;
@@ -61,7 +67,7 @@ int LIPEstagio(){
     }
 
     cout<<th->GetEntries()<<endl;
-    th->GetYaxis()->SetRangeUser(-1,400);
+    th->GetYaxis()->SetRangeUser(-1,1000);
     th->Draw("COLZ");
     
 
@@ -74,8 +80,10 @@ int LIPEstagio(){
     gausss->SetParameter(5,20);
     gausss->SetParLimits(0,1,10000);
     gausss->SetParLimits(1,-50,50);
+    gausss->SetParLimits(2,0,100);
     gausss->SetParLimits(3,1,10000);
     gausss->SetParLimits(4,-50,50);
+    gausss->SetParLimits(5,0,100);
     th->Fit("gausss","","",-60,60);
     double chi2 = gausss->GetChisquare();
     double p0 = gausss->GetParameter(0);
@@ -94,7 +102,8 @@ int LIPEstagio(){
     cout << "Bkg norm: " << p3 << " ± " << gausss->GetParError(3) << endl;
     cout << "Bkg mean: " << p4 << " ± " << gausss->GetParError(4) << endl;
     cout << "Bkg width: " << p5 << " ± " << gausss->GetParError(5) << endl;
-    cout << p2/(c/2)<<endl;
+    float res =  p2/(c/2);
+    cout << res <<endl;
 
     TF1 *gaus2 = new TF1("gaus2","gaus",-60,60);
     TF1 *gaus3 = new TF1("gaus3","gaus",-60,60);
@@ -112,7 +121,23 @@ int LIPEstagio(){
     gaus3->Draw("SAME");
     gaus3->SetLineWidth(3);
     gaus3->SetLineStyle(3);
-    
 
+    TLegend *l1 = new TLegend(0.68,0.6,0.9,0.89);
+    l1->AddEntry(th,"Data");
+    l1->AddEntry(gausss,"Total fit");
+    l1->AddEntry(gaus2,"Signal");
+    l1->AddEntry(gaus3,"Background");
+    l1->SetBorderSize(0);
+    
+    TString label = Form("Global resolution %.3f ns",res);
+    TLatex* text = new TLatex(-50,900,label.Data());
+    text->Draw();
+    TString label2 = Form("Resolution single arm %.3f ns",res*sqrt(2));
+    TLatex* text2 = new TLatex(-50,850,label2.Data());
+    text2->Draw();
+
+    l1->Draw("SAME");
+
+    gStyle->SetOptStat(0); // não ver caixinha
     return 1; 
 }
