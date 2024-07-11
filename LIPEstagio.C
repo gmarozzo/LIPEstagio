@@ -112,6 +112,7 @@ int LIPEstagio(){
     gaus3->Draw("SAME");
     gaus3->SetLineWidth(3);
     gaus3->SetLineStyle(3);
+    
 
     return 1; 
 }
