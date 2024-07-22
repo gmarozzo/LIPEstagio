@@ -25,7 +25,7 @@ void plot_res(TString nPU, TString nRes[], Double_t size_nRes){
     TCanvas *c1 = new TCanvas("c1", canvas_name, 800, 600);
     
     //create subtitles
-    TLegend *l1 = new TLegend(0.68,0.2,0.9,0.2);
+    TLegend *l1 = new TLegend(0.68,0.2,0.9,0.35);
 
     for (int i_nRes = 0; i_nRes < size_nRes; i_nRes++){
         cout << "PU = " << nPU << " and expected resolution = " << nRes[i_nRes] << endl;
@@ -104,30 +104,30 @@ void plot_res(TString nPU, TString nRes[], Double_t size_nRes){
         cout<<"Integral " << th->Integral()<<endl;
         
         //define a new function, in this case two gaussian
-        TF1 *gausss = new TF1("gausss","gaus(0)+gaus(3)",-60,60);
+        TF1 *linear = new TF1("linear","gaus(0)+gaus(3)",-60,60);
 
         //define a initial value for each parameter (0,3 = norm; 1,4 = mean 2,5 = width) (0,1,2 1st gaussian; 3,4,5 2nd gaussian) 
-        gausss->SetParameter(0,160);
-        gausss->SetParameter(1,0);
-        gausss->SetParameter(2,10);
-        gausss->SetParameter(3,100);
-        gausss->SetParameter(4,0);
-        gausss->SetParameter(5,20);
+        linear->SetParameter(0,160);
+        linear->SetParameter(1,0);
+        linear->SetParameter(2,10);
+        linear->SetParameter(3,100);
+        linear->SetParameter(4,0);
+        linear->SetParameter(5,20);
 
         //define the limits for each parameter
-        gausss->SetParLimits(0,1,10000);
-        gausss->SetParLimits(1,-50,50);
-        gausss->SetParLimits(2,0,100);
-        gausss->SetParLimits(3,1,10000);
-        gausss->SetParLimits(4,-50,50);
-        gausss->SetParLimits(5,0,100);
+        linear->SetParLimits(0,1,10000);
+        linear->SetParLimits(1,-50,50);
+        linear->SetParLimits(2,0,100);
+        linear->SetParLimits(3,1,10000);
+        linear->SetParLimits(4,-50,50);
+        linear->SetParLimits(5,0,100);
 
         //fit the date with the function defined (-60,60 x axis limits)
-        th->Fit("gausss","","",-60,60);
+        th->Fit("linear","","",-60,60);
 
         //obtain the values
-        double p2 = gausss->GetParameter(2);
-        double p2err = gausss->GetParError(2);
+        double p2 = linear->GetParameter(2);
+        double p2err = linear->GetParError(2);
 
         //signle arm resolution calculation
         float res =  (p2/(c/2))/sqrt(2)*1000;
@@ -139,7 +139,7 @@ void plot_res(TString nPU, TString nRes[], Double_t size_nRes){
 
         // Clean up
         delete th;
-        delete gausss;
+        delete linear;
         f->Close();
         delete f;
     }
@@ -171,14 +171,42 @@ void plot_res(TString nPU, TString nRes[], Double_t size_nRes){
     gr->GetXaxis()->SetTitleSize(0.038);
     gr->GetYaxis()->SetTitle("Calculated resolution [ps]");
     gr->GetYaxis()->SetTitleSize(0.038);
+
+    //define a new function, in this case a linear function
+    TF1 *linear = new TF1("linear", "pol1", 0, 80);
+
+    //set line color
+    linear->SetLineColor(kBlue);
+
+    //fit the date with the function defined (0,80 x axis limits)
+    gr->Fit("linear","","", 0, 80);
+
+    //obtain the values
+    double chi2 = linear->GetChisquare();
+    double p0 = linear->GetParameter(0);
+    double p1 =linear->GetParameter(1);
+    double gl = linear->GetNDF();
     
+    cout << "Fit Results:" << endl;
+    cout << "Chi2: " << chi2 << endl;
+    cout << "Intercept: " << p0 << " ± " << linear->GetParError(0) << endl;
+    cout << "Slope: " << p1 << " ± " << linear->GetParError(1) << endl;
+    cout << "N. degrees of freedom: " << gl << endl;
 
     // Draw legend
     l1->AddEntry(gr,"Points");
+    l1->AddEntry(linear,"Fit");
     l1->SetBorderSize(0);
     l1->SetTextSize(0.0375);
     l1->SetTextFont(62);
     l1->Draw();
+
+    //write information
+    TString label = Form("y = %.3f #pm %.3fx", p0, p1);
+    TLatex* text = new TLatex(58, maxrange*0.5, label.Data());
+    text->SetTextSize(0.035);
+    text->SetTextFont(62);
+    text->Draw();
     
     // don't show entries, etc.
     gStyle->SetOptStat(0); 
