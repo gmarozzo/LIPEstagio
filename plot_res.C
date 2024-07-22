@@ -64,8 +64,6 @@ void plot_res(TString nPU, TString nRes[], Double_t size_nRes){
         TH1F *th = new TH1F("th",hist_title,30,-60,60);
            
         float dif;
-        double c = 299.792458; //[mm/ns]
-        //int index;
         for(int i=1; i<tree->GetEntries();i++){
             if(i%10000==0) cout<<"Event n."<<i<<endl;
                 tree->GetEntry(i);
@@ -95,8 +93,6 @@ void plot_res(TString nPU, TString nRes[], Double_t size_nRes){
                         }
                     }
                     if(vertex_size < 5 && nback > 0 && nforw > 0) {
-                        //float desvio = best_dif;
-                        //cout<<desvio<<endl;
                         th->Fill(best_dif);
                     }
                     
@@ -106,6 +102,7 @@ void plot_res(TString nPU, TString nRes[], Double_t size_nRes){
             
         cout<< "Entries" << th->GetEntries()<<endl;
         cout<<"Integral " << th->Integral()<<endl;
+        
         //define a new function, in this case two gaussian
         TF1 *gausss = new TF1("gausss","gaus(0)+gaus(3)",-60,60);
 
@@ -139,10 +136,16 @@ void plot_res(TString nPU, TString nRes[], Double_t size_nRes){
         //save single arm resolution and it's error
         res_single_arm[i_nRes] = res;
         reserr_single_arm[i_nRes] = reserr;
+
+        // Clean up
+        delete th;
+        delete gausss;
+        f->Close();
+        delete f;
     }
 
-    // Create a new canvas for the TGraph
-    //TCanvas *c2 = new TCanvas("c2", "TGraph Canvas", 800, 600);
+    //create a new canvas for the TGraph
+    TCanvas *c2 = new TCanvas("c2", canvas_name, 800, 600);
 
     //make graph Calculated Resolution Vs Theoretical resolution
     TGraph* gr = new TGraph(size_nRes, Res, res_single_arm);
@@ -153,17 +156,22 @@ void plot_res(TString nPU, TString nRes[], Double_t size_nRes){
             maxrange = res_single_arm[i];
         }
     }
-    gr->Draw("*");
+    gr->SetMarkerStyle(20);
+    gr->SetMarkerSize(1.0);
+    gr->SetMarkerColor(kOrange+7);
+    gr->Draw("AP*");
     gr->SetTitle("Calculated Resolution Vs Theoretical resolution");
 
     //set y-axis range and labels
+    if(maxrange == 0){
+        maxrange = 10; //default value if maxrange = 0
+    }
     gr->GetYaxis()->SetRangeUser(-1, maxrange*1.25);
     gr->GetXaxis()->SetTitle("Theoretical resolution [ps]");
     gr->GetXaxis()->SetTitleSize(0.038);
     gr->GetYaxis()->SetTitle("Calculated resolution [ps]");
     gr->GetYaxis()->SetTitleSize(0.038);
-    gr->SetMarkerSize(2);
-    gr->SetMarkerColor(kOrange);
+    
 
     // Draw legend
     l1->AddEntry(gr,"Points");
@@ -175,6 +183,8 @@ void plot_res(TString nPU, TString nRes[], Double_t size_nRes){
     // don't show entries, etc.
     gStyle->SetOptStat(0); 
 
-    c1->SaveAs(canvas_title);
+    c2->SaveAs(canvas_title);
     return 1; 
+    // Clean up
+    delete c1;
 }
