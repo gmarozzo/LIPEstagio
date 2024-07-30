@@ -1,13 +1,13 @@
-void LIPEstagio(int nPU[], int size_nPU, int nRes[], int size_nRes){
+void LIPEstagio(TString nPU[], int size_nPU, TString nRes[], int size_nRes){
 
     //create new Canvas' name
-    string canvas_name; 
+    TString canvas_name; 
     
     //create new histogram's name
-    string hist_title;
+    TString hist_title;
 
     //create new Canvas' title
-    string canvas_title;
+    TString canvas_title;
 
     //defining maximum range for y-axis
     float maxrange = 0.;
@@ -18,40 +18,43 @@ void LIPEstagio(int nPU[], int size_nPU, int nRes[], int size_nRes){
     //defining light speed
     double c = 299.792458; //[mm/ns]
 
+    //chosing the name to save each histogram and canvas
     int choice;
     if(size_nPU == 1 && size_nRes != 1){
-        hist_title = "<#mu> = " + to_string(nPU[0]) + " with different resolutions";
-        canvas_name = "PU" + to_string(nPU[0]) + " with different Resolutions ";
+        hist_title = "<#mu> = " + nPU[0] + " with different resolutions";
+        canvas_name = "PU" + nPU[0] + " with different Resolutions";
         choice = 1;
-        canvas_title = "PU" + to_string(nPU[0]) + " with different Resolutions" + ".pdf";
+        canvas_title = "PU" + nPU[0] + " with different Resolutions" + ".pdf"; //"tirando isPU == 0" + 
     }
     if(size_nRes == 1 && size_nPU != 1){
-        hist_title = "Resolution  = " + to_string(nRes[0]) + " with different <#mu>";
-        canvas_name = "Resolution = " + to_string(nRes[0]) + " with different PU ";
+        hist_title = "Resolution  = " + nRes[0] + " with different <#mu>";
+        canvas_name = "Resolution = " + nRes[0] + " with different PU ";
         choice = 2;
-        canvas_title = "Resolution = " + to_string(nRes[0]) + " with different PU " + ".pdf";
+        canvas_title = "Resolution = " + nRes[0] + " with different PU " + ".pdf"; //"tirando isPU == 0" + 
     }
     if(size_nRes == 1 && size_nPU == 1){
-        hist_title = "<#mu> = " + to_string(nPU[0]) + " and Res = " + to_string(nRes[0]);
-        canvas_name = "PU" + to_string(nPU[0]) + " expected Resolution " + to_string(nRes[0]);
+        hist_title = "<#mu> = " + nPU[0] + " and Res = " + nRes[0];
+        canvas_name = "PU" + nPU[0] + " expected Resolution " + nRes[0];
         choice = 3;
-        canvas_title = "PU" + to_string(nPU[0]) + " with Resolution " + to_string(nRes[0]) + ".pdf";
+        canvas_title = "PU" + nPU[0] + " with Resolution " + nRes[0] + ".pdf"; //"tirando isPU == 0" + 
     }
 
     //create new Canvas
-    TCanvas *c1 = new TCanvas("c1", canvas_name.c_str(), 800, 600);
+    TCanvas *c1 = new TCanvas("c1", canvas_name, 800, 600);
     
     //create subtitles
     TLegend *l1 = new TLegend(0.68,0.6,0.9,0.89);
+
+
 
     for(int i_nPU = 0; i_nPU < size_nPU; i_nPU++){
 
         for (int i_nRes = 0; i_nRes < size_nRes; i_nRes++){
             cout << "PU = " << nPU[i_nPU] << " and expected resolution = " << nRes[i_nRes] << endl;
-            string fileName = "delphes_PU" + to_string(nPU[i_nPU]) + "_Res" + to_string(nRes[i_nRes]) + "ps.root";
+            TString fileName = "delphes_PU" + nPU[i_nPU] + "_Res" + nRes[i_nRes] + "ps.root";
             
             //open the file
-            TFile *f = new TFile(fileName.c_str(),"READ");
+            TFile *f = new TFile(fileName,"READ");
 
             //get the tree form the file
             TTree *tree = (TTree*) f->Get("Delphes");
@@ -77,7 +80,7 @@ void LIPEstagio(int nPU[], int size_nPU, int nRes[], int size_nRes){
             tree->SetBranchAddress("Vertex_size",&vertex_size);
 
             //create histogram for current file
-            TH1F *th = new TH1F("th",hist_title.c_str(),30,-60,60);
+            TH1F *th = new TH1F("th",hist_title,30,-60,60);
             
             float dif;
             double c = 299.792458; //[mm/ns]
@@ -93,17 +96,17 @@ void LIPEstagio(int nPU[], int size_nPU, int nRes[], int size_nRes){
                     //choose the best pair of protons
                     if(j>proton_size-1) continue;
                     //if(!proton_isPU[j])th->Fill(proton_t[j]);
-                    if(proton_pz[j]<0 && proton_isPU[j]==0)  { 
+                    if(proton_pz[j]<0 && proton_isPU[j]==0)  { //
                         nback++;
                         for(int l=0; l<5;l++){
                             if(l>proton_size-1) continue;
-                            if(proton_pz[l]>0 && proton_isPU[l]==0) {
+                            if(proton_pz[l]>0 && proton_isPU[l]==0) { //
                                 dif=proton_t[j]-proton_t[l];
                                 nforw++;
                             }
                             //choose the best vertex
                             for(int k = 0; k < vertex_size; k++){
-                                if(abs(vertex_z[k] - (c/2) * dif ) < best_dif){
+                                if(abs(vertex_z[k] - (c/2) * dif ) < abs(best_dif)){
                                     best_dif = vertex_z[k] - (c/2) * dif ;
                                     //cout<<best_dif<<endl;
                                 }
@@ -142,11 +145,12 @@ void LIPEstagio(int nPU[], int size_nPU, int nRes[], int size_nRes){
             
             //add histogram entry to legend
             if(choice == 1){
-                l1->AddEntry(th, Form("Res %d", nRes[i_nRes]));
+                l1->AddEntry(th, "Res " + nRes[i_nRes]);
             }
             if(choice == 2){
-                l1->AddEntry(th, Form("PU %d", nPU[i_nPU]));
+                l1->AddEntry(th, "PU " + nPU[i_nPU]);
             }
+
             //if(choice == 3){
             //    l1->AddEntry(th, Form("PU %d, Res %d", nPU[i_nPU], nRes[i_nRes]));
             //}
@@ -183,6 +187,7 @@ void LIPEstagio(int nPU[], int size_nPU, int nRes[], int size_nRes){
         double p4 = gausss->GetParameter(4);
         double p5 = gausss->GetParameter(5);
         double gl = gausss->GetNDF(); //degrees of freedom
+        double p2err = gausss->GetParError(2);
 
         cout << "Fit Results of PU = " << nPU[0] << " and expected resolution of "<< nRes[0] << ":" << endl;
         cout << "Chi2: " << chi2 << endl;
@@ -196,6 +201,7 @@ void LIPEstagio(int nPU[], int size_nPU, int nRes[], int size_nRes){
 
         //global resolution calculation
         float res =  p2/(c/2);
+        float reserr = p2err/(c/2);
         cout << "Global Resolution " << res << " ns" << endl;
 
         //draw the two gaussians with fit values (po, p1, p2, p3, p4, p5)
@@ -223,16 +229,17 @@ void LIPEstagio(int nPU[], int size_nPU, int nRes[], int size_nRes){
         l1->AddEntry(gaus3,"Background");
         
         //write information
-        TString label = Form("Global resolution %.3f ns",res);
+        TString label = Form("Global resolution %.3f ps",res*1000);
         TLatex* text1 = new TLatex(-50,maxrange*0.93,label.Data());
-        text1->SetTextSize(0.04);
+        text1->SetTextSize(0.035);
         text1->SetTextFont(62);
         text1->Draw();
-        TString label2 = Form("Resolution single arm %.3f ns",res/sqrt(2));
+        TString label2 = Form("Resolution single arm %.3f #pm %.3f ps",res/sqrt(2)*1000 ,reserr/sqrt(2)*1000);
         TLatex* text2 = new TLatex(-50,maxrange*0.85,label2.Data());
-        text2->SetTextSize(0.04);
+        text2->SetTextSize(0.035);
         text2->SetTextFont(62);
         text2->Draw();
+
         }
             
             
@@ -244,10 +251,7 @@ void LIPEstagio(int nPU[], int size_nPU, int nRes[], int size_nRes){
             th->GetYaxis()->SetTitleSize(0.038);
         }
     }
-
    
-
-    
     // Draw legend
     l1->SetBorderSize(0);
     l1->SetTextSize(0.0375);
@@ -257,7 +261,7 @@ void LIPEstagio(int nPU[], int size_nPU, int nRes[], int size_nRes){
     // don't show entries, etc.
     gStyle->SetOptStat(0); 
 
-    c1->SaveAs(canvas_title.c_str());
+    c1->SaveAs(canvas_title);
     return 1; 
 
 }

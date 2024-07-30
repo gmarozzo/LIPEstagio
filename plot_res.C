@@ -22,7 +22,7 @@ void plot_res(TString nPU, TString nRes[], Double_t size_nRes){
     Double_t Res[int(size_nRes)];
 
     //create new Canvas
-    TCanvas *c1 = new TCanvas("c1", canvas_name, 800, 600);
+    //TCanvas *c1 = new TCanvas("c1", canvas_name, 800, 600);
     
     //create subtitles
     TLegend *l1 = new TLegend(0.68,0.2,0.9,0.35);
@@ -148,7 +148,12 @@ void plot_res(TString nPU, TString nRes[], Double_t size_nRes){
     TCanvas *c2 = new TCanvas("c2", canvas_name, 800, 600);
 
     //make graph Calculated Resolution Vs Theoretical resolution
-    TGraph* gr = new TGraph(size_nRes, Res, res_single_arm);
+    Double_t Reserr[int(size_nRes)];
+     for(int i = 0; i < size_nRes; i++){
+       Reserr[i]=0;
+    }
+    //TGraph* gr = new TGraph(size_nRes, Res, res_single_arm);
+    TGraphErrors* gr = new TGraphErrors(size_nRes, Res, res_single_arm,Reserr, reserr_single_arm);
 
     //calculate maximum y range
     for(int i = 0; i < size_nRes; i++){
@@ -159,6 +164,7 @@ void plot_res(TString nPU, TString nRes[], Double_t size_nRes){
     gr->SetMarkerStyle(20);
     gr->SetMarkerSize(1.0);
     gr->SetMarkerColor(kOrange+7);
+    gr->SetLineColor(kOrange+7);
     gr->Draw("AP*");
     gr->SetTitle("Calculated Resolution Vs Theoretical resolution");
 
@@ -213,6 +219,4 @@ void plot_res(TString nPU, TString nRes[], Double_t size_nRes){
 
     c2->SaveAs(canvas_title);
     return 1; 
-    // Clean up
-    delete c1;
 }

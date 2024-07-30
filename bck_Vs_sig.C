@@ -1,13 +1,13 @@
 void bck_Vs_sig(TString files[], int n_files){
 
     //create new Canvas' name
-    TString canvas_name = "signal vs background"; 
+    TString canvas_name = "Signal vs Background"; 
     
     //create new histogram's name
-    TString hist_title = "signal vs background";
+    TString hist_title = "Signal vs Background";
 
     //create new Canvas' title
-    TString canvas_title = "signal vs background.pdf";
+    TString canvas_title = "Signal vs Background.pdf";
 
     //defining maximum range for y-axis
     float maxrange = 0.;
@@ -30,21 +30,21 @@ void bck_Vs_sig(TString files[], int n_files){
     //create subtitles
     TLegend *l1 = new TLegend(0.68,0.6,0.9,0.89);
 
-    
-
-    //create histogram for current file
-    TH1F *th2 = new TH1F("th2",hist_title,30,-500,500);
+    TFile *f2 = new TFile("Output2.root", "RECREATE");
 
     for(int i_file = 0; i_file < n_files; i_file++){
-            
+        //create histogram for current file
+                TH1F *th = new TH1F("th",hist_title,30,-500,500);
+
+            TString filename = files[i_file] + ".root";
             //open the file
-            TFile *f = new TFile(files[i_file],"READ");
+            TFile *f = new TFile(filename,"READ");
 
             //get the tree form the file
             TTree *tree = (TTree*) f->Get("Delphes");
 
             
-Int_t proton_size, vertex_size, particle_size;
+    Int_t proton_size, vertex_size, particle_size;
     Int_t proton_isPU[20], particle_PID[20];
     Float_t proton_t[20], proton_pz[20], proton_e[20], vertex_z[100], particle_e[20], particle_px[20], particle_py[20], particle_pz[20], particle_z[100];
 
@@ -85,8 +85,7 @@ Int_t proton_size, vertex_size, particle_size;
             //int index;
             cout<<"Chegou até este ponto"<<endl;
 
-            //create histogram for current file
-                TH1F *th = new TH1F("th",hist_title,30,-500,500);
+            
 
             for(int i=0; i<tree->GetEntries();i++){
                 if(i%1000==0) cout<<"Event n."<<i<<endl;
@@ -157,10 +156,12 @@ Int_t proton_size, vertex_size, particle_size;
             // draw histograms with proper formatting
             if (n_files == 0) {
                 th->Scale(1/th->Integral());
-                th->Draw();
+                th->Draw("");
+                l1->AddEntry(th, files[i_file]);
             } else {
                 th->Scale(1/th->Integral());
                 th->Draw("SAME");
+                l1->AddEntry(th, files[i_file]);
             }
             //update maximum range for y-axis
             if(th->GetMaximum() + th->GetMaximum()/2.45 > maxrange){
@@ -169,14 +170,15 @@ Int_t proton_size, vertex_size, particle_size;
             
     //set y-axis range and labels
     th->GetYaxis()->SetRangeUser(0, maxrange);
-    th->GetXaxis()->SetTitle("Zpps-Zvtx [mm]");
+    th->GetXaxis()->SetTitle("Z_{W} - #frac{c}{2}#Deltat_{protons} [mm]");
     th->GetXaxis()->SetTitleSize(0.038);
     th->GetYaxis()->SetTitle("N. events");
     th->GetYaxis()->SetTitleSize(0.038);
 
+    f->Close();
     }
+    f2->Write("th");
 
-     
     
    
     // Draw legend

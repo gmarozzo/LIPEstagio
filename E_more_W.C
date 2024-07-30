@@ -1,6 +1,4 @@
-void rapidity_mass(){
-    //string fileName = "delphes_PU" + to_string(PU) + "_Res" + to_string(Res) + "ps.root";
-
+void E_more_W(){
     TFile *f = new TFile("Signal.root","READ");
     TTree *tree = (TTree*) f->Get("Delphes");
     Int_t proton_size, vertex_size, particle_size;
@@ -42,35 +40,13 @@ void rapidity_mass(){
 
     Double_t c = 299.792458; //[mm/ns]
 
-    Float_t csi1;
-    Float_t csi2;
-
-    Float_t Mpp;
-    Float_t Mcen;
-    Float_t Rpp;
-    Float_t Rcen;
-
-    Float_t dif_M;
-    Float_t dif_R;
-    Float_t dif;
-
-    //create a 2D histogram
-    TH2F *h = new TH2F("h", "#eta_{pp} - #eta_{cen} Vs M_{pp} - M_{cen}", 100, -200, 200, 100, -1, 1);
+    //create 1D histograms
+    TH1F *energy_high = new TH1F("energy_high", "Energy of the more energetic W bosons", 30, -100, 1500);
 
     for(int i = 0; i < tree->GetEntries(); i++){
         if(i%1000==0) cout<<"Event n."<<i<<endl;
         tree->GetEntry(i);
 
-        dif=0.;
-        float best_dif=10000.;
-        csi1 = 0.;
-        csi2 = 0.;
-        Mpp = 0.;
-        Mcen = 0.;
-        Rpp = 0.;
-        Rcen = 0.;
-        dif_M = 0;
-        dif_R = 0;
         Int_t nforw = 0, nback = 0;
         Int_t particle1_index = 0, particle2_index = 0;
 
@@ -86,43 +62,22 @@ void rapidity_mass(){
                 n_bosons++;
             }
         }
-        /*if(n_bosons == 2){
-            cout<<particle_z[particle1_index]-particle_z[particle2_index]<<endl;
-        }*/
+        
         bool vertex_certo = 0;
         if(abs(particle_z[particle1_index]-particle_z[particle2_index])<0.001){
             vertex_certo = 1;
-            //cout << particle_z[particle1_index] << "     "<< particle_z[particle2_index] <<endl;
         }
-        
-        // create two lorentz vector for each W boson
-        TLorentzVector p1(particle_px[particle1_index], particle_py[particle1_index], particle_pz[particle1_index], particle_e[particle1_index]);
-        TLorentzVector p2(particle_px[particle2_index], particle_py[particle2_index], particle_pz[particle2_index], particle_e[particle2_index]);
-
-        //create a lorentz vector of the sum
-        TLorentzVector sum = p1 + p2;
-
-        //calculate the mass and rapidity of the protons and of the bosons
-        Mcen = sum.M();
-        Rcen = sum.Rapidity();
         
         //choose the best pair of protons and calculate cs1 and csi2
         for(int j=0; j<5;j++){
             if(j>proton_size-1) continue;
             if(proton_pz[j]<0)  { // && proton_isPU[j] == 0
-                csi1 = 1 - abs(proton_e[j])/p;
                 nback++;
 
                 for(int l=0; l<5;l++){
                     if(l>proton_size-1) continue;
-                    if(proton_pz[l]>0) { // && proton_isPU[l] == 0
-                        csi2 = 1 - proton_e[l]/p;
-                        dif = proton_t[j]-proton_t[l];
+                    if(proton_pz[l]>0) { // && proton_isPU[l] == 0;
                         nforw++;
-                        if(abs(Mcen-13.6 *1000 * sqrt(csi1 * csi2))<abs(Mcen-Mpp)){
-                            Mpp = 13.6 *1000 * sqrt(csi1 * csi2);
-                            Rpp = -0.5*log(csi1/csi2);
-                        }
                     }
                 }
             }
@@ -130,38 +85,42 @@ void rapidity_mass(){
         
         //calculate the difference between the masses and the rapiditys 
         if( nback > 0 && nforw >0 ){
-            dif_M = Mpp - Mcen;
-            dif_R = Rpp - Rcen;
             if(nback == 1 && nforw == 1 && n_bosons == 2 && vertex_certo){
-                //fill the 2D histogram
-                h->Fill(dif_M, dif_R);
+                //fill histogram of the Energy of the more energetic W bosons
+                if(particle_e[particle1_index] < particle_e[particle2_index]){
+                    energy_high->Fill(particle_e[particle2_index]);
+                }
+                if(particle_e[particle1_index] > particle_e[particle2_index]){
+                    energy_high->Fill(particle_e[particle1_index]);
+                }
             }
         } 
     }
 
-    TCanvas *c3 = new TCanvas("c3", "Rapidity Vs Mass", 800, 600); 
+    TCanvas *c3 = new TCanvas("c3", "Energy of the more energetic W bosons", 800, 600); 
 
-    /*         Rapidity Vs Mass histogram         */
-    c3->cd(1);
-    h->SetMarkerSize(1.0);
-    h->Draw("COLZ");
-    h->GetXaxis()->SetTitle("M_{pp} - M_{cen} [GeV]");
-    h->GetXaxis()->SetTitleSize(0.038);
-    h->GetYaxis()->SetTitle("#eta_{pp} - #eta_{cen}");
-    h->GetYaxis()->SetTitleSize(0.038);
+    /*         Energy of the more energetic W bosons histogram        */
+    energy_high->SetMarkerColor(kOrange+7);
+    energy_high->SetMarkerSize(1.0);
+    energy_high->SetLineColor(kOrange+7);
+    energy_high->Draw("COLZ");
+    energy_high->GetXaxis()->SetTitle("E_{W more energy} [GeV]");
+    energy_high->GetXaxis()->SetTitleSize(0.038);
+    energy_high->GetYaxis()->SetTitle("N. events");
+    energy_high->GetYaxis()->SetTitleSize(0.038);
 
     //draw legend
-    /*TLegend *l1 = new TLegend(0.68,0.6,0.9,0.89);
-    l1->AddEntry(h,"Data");
-    l1->SetBorderSize(0);
-    l1->SetTextSize(0.0375);
-    l1->SetTextFont(62);
-    l1->Draw("SAME");*/
+    TLegend *l8 = new TLegend(0.68,0.6,0.9,0.89);
+    l8->AddEntry(energy_high,"Data");
+    l8->SetBorderSize(0);
+    l8->SetTextSize(0.0375);
+    l8->SetTextFont(62);
+    l8->Draw("SAME");
 
     // don't show entries, etc.
     gStyle->SetOptStat(0); 
 
     //save canvas as a pdf file
-    c3->SaveAs("Rapidity Vs Mass.pdf"); 
+    c3->SaveAs("Energy of the more energetic W bosons.pdf"); 
 
 }
