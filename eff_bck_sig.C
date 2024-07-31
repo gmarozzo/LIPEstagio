@@ -102,7 +102,7 @@ void eff_bck_sig(TString files[], int nfiles){
                 graph3->GetYaxis()->SetTitleSize(0.035);
                 graph3->GetXaxis()->SetTitle("Cut [mm]");
                 graph3->GetXaxis()->SetTitleSize(0.038);
-                graph3->GetYaxis()->SetRangeUser(0, 4.5); //maxrange * 2
+                graph3->GetYaxis()->SetRangeUser(0, maxrange * 2); // 4.5
                 graph3->SetTitle("Nhanha");
                 graph3->SetMarkerSize(1);
                 graph3->SetMarkerStyle(83);
