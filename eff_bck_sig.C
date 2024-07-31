@@ -26,9 +26,7 @@ void eff_bck_sig(TString files[], int nfiles){
     TGraphErrors* graph3; //graphic of the variable S/sqrt(S+B)
 
     //array of colors for histograms
-    int colors[] = { kAzure-7, kGreen, kRed-3, kPink, kBlue};
-
-    float maxrange = 0.;
+    int colors[] = { kAzure+5, kTeal-5, kRed-3, kPink-3, kBlue+1, kViolet-2, kGreen-7, kOrange+1, kYellow, kMagenta-7};
 
     for(int i_file = 0; i_file < nfiles; i_file++){
 
@@ -73,6 +71,7 @@ void eff_bck_sig(TString files[], int nfiles){
     Float_t variable[size_range];
     Double_t* S = graph2->GetY();
     Double_t* B = graph1->GetY();
+    Double_t maxrange = 0.;
     for (int n_s = 0; n_s < size_nS; n_s++){
         for(int n_b = 0; n_b < size_nB; n_b++){
             if((nS[n_s] == 1  && nB[n_b] == 1) || (nS[n_s] != nB[n_b])){
@@ -92,14 +91,23 @@ void eff_bck_sig(TString files[], int nfiles){
                 int colorIndex = (n_s * size_nS + n_b) % (sizeof(colors) / sizeof(colors[0]));
                 graph3->SetMarkerColor(colors[colorIndex]);
 
+                Double_t* points = graph3->GetY();
+                for(int i_range = 0; i_range < size_range; i_range++){
+                    if(points[i_range] > maxrange){
+                        maxrange = points[i_range];
+                    }
+                }
+                cout<<"MAx range: " << maxrange << endl << endl;
                 graph3->GetYaxis()->SetTitle("S #times n_{s} / #sqrt{S #times n_{S} + B #times n_{B}}");
                 graph3->GetYaxis()->SetTitleSize(0.035);
                 graph3->GetXaxis()->SetTitle("Cut [mm]");
                 graph3->GetXaxis()->SetTitleSize(0.038);
-                graph3->GetYaxis()->SetRangeUser(0, 1.5);
+                graph3->GetYaxis()->SetRangeUser(0, 4.5); //maxrange * 2
                 graph3->SetTitle("Nhanha");
                 graph3->SetMarkerSize(1);
                 graph3->SetMarkerStyle(83);
+
+                cout<<"MAx range: " << maxrange << endl << endl;
                 
                 TString leg = Form("n_{S}=%d & n_{B}=%d", nS[n_s], nB[n_b]);
                 l2->AddEntry(graph3, leg);
@@ -132,20 +140,14 @@ void eff_bck_sig(TString files[], int nfiles){
     l1->SetBorderSize(0);
     l1->SetTextSize(0.0275);
     l1->SetTextFont(42);
-    l1->Draw();
-
-    
+    l1->Draw(); 
     
     l2->SetBorderSize(0);
     l2->SetTextSize(0.0275);
     l2->SetTextFont(42);
-    
 
-
-
-    canvas_title = canvas_name + "eff2.pdf";
+    canvas_title = "Efficiency " + canvas_name + ".pdf";
 
     c1->SetTitle(canvas_name);
-    
     c1->SaveAs(canvas_title);
 }
